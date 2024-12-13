@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salah Counter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    h1 {
+      color: #333;
+    }
+    .counter {
+      margin: 10px 0;
+      padding: 15px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+      width: 300px;
+    }
+    .counter h2 {
+      margin: 0;
+      font-size: 20px;
+      color: #555;
+    }
+    .buttons {
+      margin-top: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button.increment {
+      background-color: #4caf50;
+      color: white;
+    }
+    button.decrement {
+      background-color: #f44336;
+      color: white;
+    }
+    button.reset {
+      background-color: #2196f3;
+      color: white;
+    }
+    .total {
+      margin-top: 20px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>Salah Counter</h1>
+  <div id="counters">
+    <!-- Counter Components Will Be Added Here Dynamically -->
+  </div>
+  <div class="total" id="total">Total Salahs Left: 0</div>
+  <button class="reset" onclick="resetCounters()">Reset All</button>
+
+  <script>
+    // Salah counters object
+    const salahCounters = {
+      Fajr: 0,
+      Zuhr: 0,
+      Asr: 0,
+      Maghrib: 0,
+      Isha: 0
+    };
+
+    // Function to update the display
+    function updateDisplay() {
+      const countersDiv = document.getElementById('counters');
+      countersDiv.innerHTML = ''; // Clear existing counters
+
+      for (const [prayer, count] of Object.entries(salahCounters)) {
+        const counterDiv = document.createElement('div');
+        counterDiv.className = 'counter';
+
+        const title = document.createElement('h2');
+        title.textContent = `${prayer}: ${count}`;
+        counterDiv.appendChild(title);
+
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.className = 'buttons';
+
+        // Increment button
+        const incrementButton = document.createElement('button');
+        incrementButton.className = 'increment';
+        incrementButton.textContent = '+';
+        incrementButton.onclick = () => {
+          salahCounters[prayer]++;
+          updateDisplay();
+        };
+        buttonsDiv.appendChild(incrementButton);
+
+        // Decrement button
+        const decrementButton = document.createElement('button');
+        decrementButton.className = 'decrement';
+        decrementButton.textContent = '-';
+        decrementButton.onclick = () => {
+          if (salahCounters[prayer] > 0) {
+            salahCounters[prayer]--;
+            updateDisplay();
+          }
+        };
+        buttonsDiv.appendChild(decrementButton);
+
+        counterDiv.appendChild(buttonsDiv);
+        countersDiv.appendChild(counterDiv);
+      }
+
+      // Update total
+      const totalDiv = document.getElementById('total');
+      const total = Object.values(salahCounters).reduce((a, b) => a + b, 0);
+      totalDiv.textContent = `Total Salahs Left: ${total}`;
+    }
+
+    // Reset all counters
+    function resetCounters() {
+      for (const prayer in salahCounters) {
+        salahCounters[prayer] = 0;
+      }
+      updateDisplay();
+    }
+
+    // Initialize the display
+    updateDisplay();
+  </script>
+</body>
+</html>
+
