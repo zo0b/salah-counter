@@ -3,33 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salah Counter</title>
+  <title>Salah Completion Tracker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
       padding: 20px;
+      text-align: center;
       background-color: #f4f4f4;
     }
     h1 {
+      margin-bottom: 20px;
       color: #333;
     }
-    .counter {
-      margin: 10px 0;
-      padding: 15px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      display: inline-block;
-      width: 300px;
+    .year {
+      margin-bottom: 20px;
     }
-    .counter h2 {
-      margin: 0;
-      font-size: 20px;
+    .month {
+      margin-bottom: 10px;
+      font-weight: bold;
       color: #555;
     }
-    .buttons {
-      margin-top: 10px;
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      margin-bottom: 20px;
+    }
+    .day {
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 12px;
+    }
+    .day.incomplete {
+      background-color: #fff;
+      color: #333;
+    }
+    .day.complete {
+      background-color: #4caf50;
+      color: white;
+    }
+    .prayer-buttons {
+      margin: 20px;
     }
     button {
       padding: 10px 20px;
@@ -38,90 +56,131 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    button.increment {
-      background-color: #4caf50;
-      color: white;
-    }
     button.decrement {
       background-color: #f44336;
       color: white;
     }
-    .total {
-      margin-top: 20px;
-      font-size: 22px;
-      font-weight: bold;
-      color: #333;
-    }
   </style>
 </head>
 <body>
-  <h1>Salah Counter</h1>
-  <div id="counters">
-    <!-- Counter Components Will Be Added Here Dynamically -->
+  <h1>Salah Completion Tracker</h1>
+  <div id="tracker"></div>
+
+  <div class="prayer-buttons">
+    <h2>Prayer Counters</h2>
+    <div id="prayer-counters"></div>
   </div>
-  <div class="total" id="total">Total Salahs Left: 15850</div>
 
   <script>
-    // Salah counters object
-    const salahCounters = {
+    // Initialize prayer counters
+    const prayerCounters = {
       Fajr: 3170,
       Zuhr: 3170,
       Asr: 3170,
       Maghrib: 3170,
       Isha: 3170,
-      Witr: 3170
+      Witr: 3170,
     };
 
-    // Function to update the display
-    function updateDisplay() {
-      const countersDiv = document.getElementById('counters');
-      countersDiv.innerHTML = ''; // Clear existing counters
+    // Object to track which prayers are completed for each day
+    const daysPrayers = {};
 
-      for (const [prayer, count] of Object.entries(salahCounters)) {
-        const counterDiv = document.createElement('div');
-        counterDiv.className = 'counter';
+    // Generate years and months from 2016 to the current year
+    const startYear = 2016;
+    const currentYear = new Date().getFullYear();
+    const months = [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
 
-        const title = document.createElement('h2');
-        title.textContent = `${prayer}: ${count}`;
-        counterDiv.appendChild(title);
+    // Create the tracker
+    function createTracker() {
+      const trackerDiv = document.getElementById('tracker');
+      trackerDiv.innerHTML = '';
 
-        const buttonsDiv = document.createElement('div');
-        buttonsDiv.className = 'buttons';
+      for (let year = startYear; year <= currentYear; year++) {
+        const yearDiv = document.createElement('div');
+        yearDiv.className = 'year';
+        yearDiv.innerHTML = `<h2>${year}</h2>`;
+        
+        for (let month = 0; month < 12; month++) {
+          const monthDiv = document.createElement('div');
+          monthDiv.className = 'month';
+          monthDiv.textContent = months[month];
 
-        // Add button
-        const addButton = document.createElement('button');
-        addButton.className = 'increment';
-        addButton.textContent = '+';
-        addButton.onclick = () => {
-          salahCounters[prayer]++;
-          updateDisplay();
-        };
-        buttonsDiv.appendChild(addButton);
+          const calendarDiv = document.createElement('div');
+          calendarDiv.className = 'calendar';
 
-        // Subtract button
-        const subtractButton = document.createElement('button');
-        subtractButton.className = 'decrement';
-        subtractButton.textContent = '-';
-        subtractButton.onclick = () => {
-          if (salahCounters[prayer] > 0) {
-            salahCounters[prayer]--;
-            updateDisplay();
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
+          for (let day = 1; day <= daysInMonth; day++) {
+            const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'day incomplete';
+            dayDiv.textContent = day;
+            dayDiv.dataset.date = date;
+
+            // Initialize prayers for the day
+            if (!daysPrayers[date]) {
+              daysPrayers[date] = { Fajr: false, Zuhr: false, Asr: false, Maghrib: false, Isha: false, Witr: false };
+            }
+
+            calendarDiv.appendChild(dayDiv);
           }
-        };
-        buttonsDiv.appendChild(subtractButton);
-
-        counterDiv.appendChild(buttonsDiv);
-        countersDiv.appendChild(counterDiv);
+          monthDiv.appendChild(calendarDiv);
+          yearDiv.appendChild(monthDiv);
+        }
+        trackerDiv.appendChild(yearDiv);
       }
-
-      // Update total
-      const totalDiv = document.getElementById('total');
-      const total = Object.values(salahCounters).reduce((a, b) => a + b, 0);
-      totalDiv.textContent = `Total Salahs Left: ${total}`;
     }
 
-    // Initialize the display
-    updateDisplay();
+    // Create prayer buttons
+    function createPrayerButtons() {
+      const prayerDiv = document.getElementById('prayer-counters');
+      prayerDiv.innerHTML = '';
+
+      for (const prayer in prayerCounters) {
+        const prayerSection = document.createElement('div');
+        prayerSection.innerHTML = `
+          <h3>${prayer}: ${prayerCounters[prayer]}</h3>
+          <button class="decrement" onclick="decrementPrayer('${prayer}')">-</button>
+        `;
+        prayerDiv.appendChild(prayerSection);
+      }
+    }
+
+    // Function to decrement a prayer counter
+    function decrementPrayer(prayer) {
+      if (prayerCounters[prayer] > 0) {
+        prayerCounters[prayer]--;
+        markDays(prayer);
+        createPrayerButtons();
+      }
+    }
+
+    // Mark consecutive days for a prayer
+    function markDays(prayer) {
+      const calendarDays = document.querySelectorAll('.day.incomplete');
+
+      for (const dayDiv of calendarDays) {
+        const date = dayDiv.dataset.date;
+
+        // If the prayer for the day is not yet marked
+        if (!daysPrayers[date][prayer]) {
+          daysPrayers[date][prayer] = true;
+
+          // Check if the entire day is complete
+          const allPrayersDone = Object.values(daysPrayers[date]).every(val => val);
+          if (allPrayersDone) {
+            dayDiv.className = 'day complete';
+          }
+          return; // Exit after marking one day for the prayer
+        }
+      }
+    }
+
+    // Initialize the tracker
+    createTracker();
+    createPrayerButtons();
   </script>
 </body>
 </html>
