@@ -46,10 +46,6 @@
       background-color: #f44336;
       color: white;
     }
-    button.reset {
-      background-color: #2196f3;
-      color: white;
-    }
     .total {
       margin-top: 20px;
       font-size: 22px;
@@ -63,17 +59,17 @@
   <div id="counters">
     <!-- Counter Components Will Be Added Here Dynamically -->
   </div>
-  <div class="total" id="total">Total Salahs Left: 0</div>
-  <button class="reset" onclick="resetCounters()">Reset All</button>
+  <div class="total" id="total">Total Salahs Left: 15850</div>
 
   <script>
     // Salah counters object
     const salahCounters = {
-      Fajr: 0,
-      Zuhr: 0,
-      Asr: 0,
-      Maghrib: 0,
-      Isha: 0
+      Fajr: 3170,
+      Zuhr: 3170,
+      Asr: 3170,
+      Maghrib: 3170,
+      Isha: 3170,
+      Witr: 3170
     };
 
     // Function to update the display
@@ -92,27 +88,27 @@
         const buttonsDiv = document.createElement('div');
         buttonsDiv.className = 'buttons';
 
-        // Increment button
-        const incrementButton = document.createElement('button');
-        incrementButton.className = 'increment';
-        incrementButton.textContent = '+';
-        incrementButton.onclick = () => {
+        // Add button
+        const addButton = document.createElement('button');
+        addButton.className = 'increment';
+        addButton.textContent = '+';
+        addButton.onclick = () => {
           salahCounters[prayer]++;
           updateDisplay();
         };
-        buttonsDiv.appendChild(incrementButton);
+        buttonsDiv.appendChild(addButton);
 
-        // Decrement button
-        const decrementButton = document.createElement('button');
-        decrementButton.className = 'decrement';
-        decrementButton.textContent = '-';
-        decrementButton.onclick = () => {
+        // Subtract button
+        const subtractButton = document.createElement('button');
+        subtractButton.className = 'decrement';
+        subtractButton.textContent = '-';
+        subtractButton.onclick = () => {
           if (salahCounters[prayer] > 0) {
             salahCounters[prayer]--;
             updateDisplay();
           }
         };
-        buttonsDiv.appendChild(decrementButton);
+        buttonsDiv.appendChild(subtractButton);
 
         counterDiv.appendChild(buttonsDiv);
         countersDiv.appendChild(counterDiv);
@@ -124,17 +120,8 @@
       totalDiv.textContent = `Total Salahs Left: ${total}`;
     }
 
-    // Reset all counters
-    function resetCounters() {
-      for (const prayer in salahCounters) {
-        salahCounters[prayer] = 0;
-      }
-      updateDisplay();
-    }
-
     // Initialize the display
     updateDisplay();
   </script>
 </body>
 </html>
-
