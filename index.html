@@ -3,36 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Salah Completion Tracker</title>
+  <title>Salah Tracker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
       text-align: center;
+      padding: 20px;
       background-color: #f4f4f4;
     }
     h1 {
       margin-bottom: 20px;
       color: #333;
     }
-    .year {
-      margin-bottom: 20px;
-    }
-    .month {
-      margin-bottom: 10px;
-      font-weight: bold;
-      color: #555;
-    }
-    .calendar {
+    .container {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-      margin-bottom: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 10px;
+      margin: 20px auto;
+      max-width: 800px;
+    }
+    .widget {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #fff;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s ease-in-out;
+    }
+    .widget:hover {
+      transform: scale(1.1);
+      background-color: #f0f0f0;
+    }
+    .calendar-view {
+      display: none;
+      margin: 20px auto;
+      max-width: 600px;
+      text-align: center;
     }
     .day {
+      display: inline-block;
       width: 30px;
       height: 30px;
       line-height: 30px;
+      margin: 2px;
       text-align: center;
       border: 1px solid #ddd;
       border-radius: 5px;
@@ -46,33 +60,49 @@
       background-color: #4caf50;
       color: white;
     }
-    .prayer-buttons {
-      margin: 20px;
+    .prayer-bank {
+      margin: 20px auto;
+      text-align: center;
     }
     button {
-      padding: 10px 20px;
+      padding: 10px 15px;
       margin: 5px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
     }
-    button.decrement {
+    button.increase {
+      background-color: #4caf50;
+      color: white;
+    }
+    button.decrease {
       background-color: #f44336;
       color: white;
     }
   </style>
 </head>
 <body>
-  <h1>Salah Completion Tracker</h1>
-  <div id="tracker"></div>
+  <h1>Salah Tracker</h1>
+  <div id="year-view" class="container"></div>
 
-  <div class="prayer-buttons">
-    <h2>Prayer Counters</h2>
-    <div id="prayer-counters"></div>
+  <div id="calendar-view" class="calendar-view"></div>
+
+  <div class="prayer-bank">
+    <h2>Extra Prayer Bank</h2>
+    <h3 id="prayer-bank-counter">0</h3>
+    <button class="increase" onclick="updateBank(1)">+</button>
+    <button class="decrease" onclick="updateBank(-1)">-</button>
   </div>
 
   <script>
-    // Initialize prayer counters
+    const startYear = 2016;
+    const endYear = 2024;
+    const endMonth = 8; // August 2024
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
     const prayerCounters = {
       Fajr: 3170,
       Zuhr: 3170,
@@ -82,105 +112,81 @@
       Witr: 3170,
     };
 
-    // Object to track which prayers are completed for each day
-    const daysPrayers = {};
+    const completedDays = {}; // Tracks completed prayers per day
+    let prayerBank = 0; // Counter for the extra prayer bank
 
-    // Generate years and months from 2016 to the current year
-    const startYear = 2016;
-    const currentYear = new Date().getFullYear();
-    const months = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ];
+    // Render Year View
+    function renderYearView() {
+      const yearView = document.getElementById('year-view');
+      yearView.innerHTML = '';
 
-    // Create the tracker
-    function createTracker() {
-      const trackerDiv = document.getElementById('tracker');
-      trackerDiv.innerHTML = '';
-
-      for (let year = startYear; year <= currentYear; year++) {
-        const yearDiv = document.createElement('div');
-        yearDiv.className = 'year';
-        yearDiv.innerHTML = `<h2>${year}</h2>`;
-        
-        for (let month = 0; month < 12; month++) {
-          const monthDiv = document.createElement('div');
-          monthDiv.className = 'month';
-          monthDiv.textContent = months[month];
-
-          const calendarDiv = document.createElement('div');
-          calendarDiv.className = 'calendar';
-
-          const daysInMonth = new Date(year, month + 1, 0).getDate();
-          for (let day = 1; day <= daysInMonth; day++) {
-            const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const dayDiv = document.createElement('div');
-            dayDiv.className = 'day incomplete';
-            dayDiv.textContent = day;
-            dayDiv.dataset.date = date;
-
-            // Initialize prayers for the day
-            if (!daysPrayers[date]) {
-              daysPrayers[date] = { Fajr: false, Zuhr: false, Asr: false, Maghrib: false, Isha: false, Witr: false };
-            }
-
-            calendarDiv.appendChild(dayDiv);
-          }
-          monthDiv.appendChild(calendarDiv);
-          yearDiv.appendChild(monthDiv);
-        }
-        trackerDiv.appendChild(yearDiv);
+      for (let year = startYear; year <= endYear; year++) {
+        const yearWidget = document.createElement('div');
+        yearWidget.className = 'widget';
+        yearWidget.textContent = year;
+        yearWidget.onclick = () => renderMonthView(year);
+        yearView.appendChild(yearWidget);
       }
     }
 
-    // Create prayer buttons
-    function createPrayerButtons() {
-      const prayerDiv = document.getElementById('prayer-counters');
-      prayerDiv.innerHTML = '';
+    // Render Month View
+    function renderMonthView(year) {
+      const calendarView = document.getElementById('calendar-view');
+      calendarView.innerHTML = `<h2>${year}</h2><div class="container"></div>`;
+      const container = calendarView.querySelector('.container');
+      container.innerHTML = '';
 
-      for (const prayer in prayerCounters) {
-        const prayerSection = document.createElement('div');
-        prayerSection.innerHTML = `
-          <h3>${prayer}: ${prayerCounters[prayer]}</h3>
-          <button class="decrement" onclick="decrementPrayer('${prayer}')">-</button>
-        `;
-        prayerDiv.appendChild(prayerSection);
+      months.forEach((month, index) => {
+        if (year === endYear && index > endMonth) return; // Stop at August 2024
+        const monthWidget = document.createElement('div');
+        monthWidget.className = 'widget';
+        monthWidget.textContent = month;
+        monthWidget.onclick = () => renderDayView(year, index + 1);
+        container.appendChild(monthWidget);
+      });
+
+      calendarView.style.display = 'block';
+    }
+
+    // Render Day View
+    function renderDayView(year, month) {
+      const calendarView = document.getElementById('calendar-view');
+      calendarView.innerHTML = `<h2>${months[month - 1]} ${year}</h2><div class="container"></div>`;
+      const container = calendarView.querySelector('.container');
+      container.style.gridTemplateColumns = 'repeat(7, 1fr)'; // 7 days a week
+      const daysInMonth = new Date(year, month, 0).getDate();
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayDiv = document.createElement('div');
+        dayDiv.className = `day ${completedDays[date] ? 'complete' : 'incomplete'}`;
+        dayDiv.textContent = day;
+
+        dayDiv.onclick = () => toggleDayCompletion(date, dayDiv);
+        container.appendChild(dayDiv);
       }
     }
 
-    // Function to decrement a prayer counter
-    function decrementPrayer(prayer) {
-      if (prayerCounters[prayer] > 0) {
-        prayerCounters[prayer]--;
-        markDays(prayer);
-        createPrayerButtons();
+    // Toggle Day Completion
+    function toggleDayCompletion(date, dayDiv) {
+      if (completedDays[date]) {
+        delete completedDays[date];
+        dayDiv.className = 'day incomplete';
+      } else {
+        completedDays[date] = true;
+        dayDiv.className = 'day complete';
       }
     }
 
-    // Mark consecutive days for a prayer
-    function markDays(prayer) {
-      const calendarDays = document.querySelectorAll('.day.incomplete');
-
-      for (const dayDiv of calendarDays) {
-        const date = dayDiv.dataset.date;
-
-        // If the prayer for the day is not yet marked
-        if (!daysPrayers[date][prayer]) {
-          daysPrayers[date][prayer] = true;
-
-          // Check if the entire day is complete
-          const allPrayersDone = Object.values(daysPrayers[date]).every(val => val);
-          if (allPrayersDone) {
-            dayDiv.className = 'day complete';
-          }
-          return; // Exit after marking one day for the prayer
-        }
-      }
+    // Update Prayer Bank
+    function updateBank(value) {
+      prayerBank += value;
+      if (prayerBank < 0) prayerBank = 0; // Prevent negative values
+      document.getElementById('prayer-bank-counter').textContent = prayerBank;
     }
 
-    // Initialize the tracker
-    createTracker();
-    createPrayerButtons();
+    // Initialize
+    renderYearView();
   </script>
 </body>
 </html>
